@@ -51,8 +51,8 @@ def create_app():
     # ------------------------------------------------
     # Register blueprints (MATCHED to your structure)
     # ------------------------------------------------
-    from app.routes import main
-    from app.admin import admin
+    from src.app.routes import main
+    from src.app.admin import admin
 
     app.register_blueprint(main)
     app.register_blueprint(admin)
@@ -68,6 +68,3 @@ def create_app():
 
     return app
 
-
-# Global instance for Gunicorn on Render
-app = create_app()
