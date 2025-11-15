@@ -5,20 +5,19 @@ from dotenv import load_dotenv
 import os
 
 # ------------------------------------------------
-# Load environment variables (.env works locally AND on Render)
+# Base directory & load environment variables
+# Works both locally AND on Render
 # ------------------------------------------------
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 ENV_PATH = os.path.join(BASE_DIR, ".env")
-
-load_dotenv(ENV_PATH)
-print(f"[INIT] Loaded .env from: {ENV_PATH}")
+loaded = load_dotenv(ENV_PATH)
+print(f"[INIT] Loaded .env from: {ENV_PATH} -> Success: {loaded}")
 
 # ------------------------------------------------
 # Initialize extensions
 # ------------------------------------------------
 db = SQLAlchemy()
 login_manager = LoginManager()
-
 
 def create_app():
     app = Flask(__name__)
@@ -49,7 +48,7 @@ def create_app():
     login_manager.login_view = "main.login"
 
     # ------------------------------------------------
-    # Register blueprints (MATCHED to your structure)
+    # Register blueprints (matched to your folder structure)
     # ------------------------------------------------
     from src.app.routes import main
     from src.app.admin import admin
@@ -68,3 +67,7 @@ def create_app():
 
     return app
 
+# ------------------------------------------------
+# Expose app for Gunicorn (Render)
+# ------------------------------------------------
+app = create_app()
