@@ -4,66 +4,70 @@ from flask_login import LoginManager
 from dotenv import load_dotenv
 import os
 
-# -------------------------
+# ------------------------------------------------
+# Load environment variables (.env works locally AND on Render)
+# ------------------------------------------------
+BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+ENV_PATH = os.path.join(BASE_DIR, ".env")
+
+load_dotenv(ENV_PATH)
+print(f"[INIT] Loaded .env from: {ENV_PATH}")
+
+# ------------------------------------------------
 # Initialize extensions
-# -------------------------
+# ------------------------------------------------
 db = SQLAlchemy()
 login_manager = LoginManager()
 
-# -------------------------
-# Explicitly load .env from your project path
-# -------------------------
-# Make sure the file is named ".env" (NOT ".env.txt")
-DOTENV_PATH = r"C:\Users\hp\Desktop\Gn Joe\src\.env"
-loaded = load_dotenv(DOTENV_PATH)
-print(f"Loading .env from: {DOTENV_PATH} -> Success: {loaded}")
-
-# Test environment variables immediately
-print("Master Address:", os.getenv("BINANCE_MASTER_ADDRESS"))
-print("Network:", os.getenv("BINANCE_NETWORK"))
 
 def create_app():
     app = Flask(__name__)
 
-    # -------------------------
-    # Security and Configuration
-    # -------------------------
-    app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'supersecretkey123')
+    # ------------------------------------------------
+    # SECRET KEY
+    # ------------------------------------------------
+    app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", "fallback-secret-key")
 
-    # Database
-    BASE_DIR = r"C:\Users\hp\Desktop\Gn Joe"
-    DB_PATH = os.path.join(BASE_DIR, "platform.db")
-    app.config['SQLALCHEMY_DATABASE_URI'] = f"sqlite:///{DB_PATH}"
-    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+    # ------------------------------------------------
+    # DATABASE (works locally + Render)
+    # ------------------------------------------------
+    db_path = os.path.join(BASE_DIR, "platform.db")
+    app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{db_path}"
+    app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
-    # -------------------------
-    # Binance Wallet Settings (from .env)
-    # -------------------------
-    app.config['BINANCE_MASTER_ADDRESS'] = os.getenv('BINANCE_MASTER_ADDRESS')
-    app.config['BINANCE_NETWORK'] = os.getenv('BINANCE_NETWORK', 'TRC20')
+    # ------------------------------------------------
+    # BINANCE WALLET SETTINGS
+    # ------------------------------------------------
+    app.config["BINANCE_MASTER_ADDRESS"] = os.getenv("BINANCE_MASTER_ADDRESS")
+    app.config["BINANCE_NETWORK"] = os.getenv("BINANCE_NETWORK", "TRC20")
 
-    # -------------------------
-    # Initialize extensions
-    # -------------------------
+    # ------------------------------------------------
+    # Initialize Flask extensions
+    # ------------------------------------------------
     db.init_app(app)
     login_manager.init_app(app)
-    login_manager.login_view = 'main.login'  # updated to your main blueprint
+    login_manager.login_view = "main.login"
 
-    # -------------------------
-    # Register Blueprints
-    # -------------------------
-    from src.app.routes import main
-    from src.app.admin import admin
+    # ------------------------------------------------
+    # Register blueprints (MATCHED to your structure)
+    # ------------------------------------------------
+    from app.routes import main
+    from app.admin import admin
+
     app.register_blueprint(main)
     app.register_blueprint(admin)
 
-    # -------------------------
+    # ------------------------------------------------
     # Create database tables
-    # -------------------------
+    # ------------------------------------------------
     with app.app_context():
         db.create_all()
-        print(f"? Database initialized at: {DB_PATH}")
-        print(f"? Binance Wallet: {app.config['BINANCE_MASTER_ADDRESS']}")
-        print(f"? Network: {app.config['BINANCE_NETWORK']}")
+        print("[INIT] Database initialized:", db_path)
+        print("[INIT] Master Wallet:", app.config["BINANCE_MASTER_ADDRESS"])
+        print("[INIT] Network:", app.config["BINANCE_NETWORK"])
 
     return app
+
+
+# Global instance for Gunicorn on Render
+app = create_app()
