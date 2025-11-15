@@ -1,0 +1,69 @@
+{% extends "layout.html" %}
+{% block title %}KYC Submission{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+  <div class="row justify-content-center">
+    <div class="col-md-6">
+      <div class="card shadow-sm p-4">
+        <h2 class="text-center mb-4">📝 KYC Submission</h2>
+
+        <!-- Flash messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+              <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+              </div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+
+        {% if latest_kyc %}
+          <div class="alert 
+                      {% if latest_kyc.status == 'approved' %}alert-success{% endif %}
+                      {% if latest_kyc.status == 'pending' %}alert-warning{% endif %}
+                      {% if latest_kyc.status == 'rejected' %}alert-danger{% endif %}">
+            <p><strong>Status:</strong> {{ latest_kyc.status|capitalize }}</p>
+            <p><strong>Full Name:</strong> {{ latest_kyc.full_name }}</p>
+            <p><strong>ID Number:</strong> {{ latest_kyc.id_number }}</p>
+            <p><strong>Document:</strong> 
+              <a href="{{ url_for('static', filename='uploads/' ~ latest_kyc.document_path.split('/')[-1]) }}" target="_blank">View</a>
+            </p>
+            {% if latest_kyc.status == 'rejected' %}
+              <p>Please resubmit your KYC with correct details.</p>
+            {% else %}
+              <p>You can update your submission if needed.</p>
+            {% endif %}
+          </div>
+        {% else %}
+          <div class="alert alert-info">
+            You have not submitted KYC yet. Please fill the form below.
+          </div>
+        {% endif %}
+
+        <form method="POST" enctype="multipart/form-data">
+          <div class="mb-3">
+            <label for="full_name" class="form-label">Full Name</label>
+            <input type="text" class="form-control" id="full_name" name="full_name" required>
+          </div>
+          <div class="mb-3">
+            <label for="id_number" class="form-label">ID Number</label>
+            <input type="text" class="form-control" id="id_number" name="id_number" required>
+          </div>
+          <div class="mb-3">
+            <label for="document" class="form-label">Upload Document (PDF/JPG/PNG)</label>
+            <input type="file" class="form-control" id="document" name="document" accept=".pdf,.jpg,.jpeg,.png" required>
+          </div>
+          <button type="submit" class="btn btn-success w-100">Submit KYC</button>
+        </form>
+
+        <a class="btn btn-secondary w-100 mt-3" href="{{ url_for('main.dashboard') }}">⬅️ Back to Dashboard</a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+

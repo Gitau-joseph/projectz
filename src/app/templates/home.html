@@ -1,0 +1,18 @@
+{% extends "layout.html" %}
+{% block title %}Home{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+  <div class="row justify-content-center">
+    <div class="col-md-8 text-center">
+      <div class="card shadow-sm p-5">
+        <h1 class="mb-4">💼 Welcome to the Custodial Investment Platform</h1>
+        <p class="lead mb-4">Securely manage your investments, deposits, and earnings with ease.</p>
+        <a href="{{ url_for('main.login') }}" class="btn btn-primary btn-lg me-2">Login</a>
+        <a href="{{ url_for('main.register') }}" class="btn btn-success btn-lg">Register</a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+

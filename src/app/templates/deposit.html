@@ -1,0 +1,67 @@
+{% extends "layout.html" %}
+{% block title %}Deposit Funds{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-6">
+    <div class="card shadow-sm mt-5 p-4">
+      <h3 class="text-center mb-3">💰 Deposit Funds</h3>
+
+      <!-- Flash messages -->
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          {% for category, message in messages %}
+            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+              {{ message }}
+              <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+
+      <p class="text-center">Send your deposit to the following Binance wallet:</p>
+      <div class="border p-3 rounded text-break mb-2 bg-light" id="walletAddress">{{ deposit_address }}</div>
+      <div class="d-grid gap-2 mb-3">
+        <button class="btn btn-outline-primary" type="button" onclick="copyAddress()">📋 Copy Address</button>
+      </div>
+      <p class="text-center"><strong>Network:</strong> {{ network }}</p>
+
+      {% if qr_url %}
+      <p class="text-center">Or scan this QR code:</p>
+      <div class="text-center mb-3">
+        <img src="{{ qr_url }}" alt="Deposit QR Code" class="img-fluid rounded" style="max-width:200px;">
+      </div>
+      {% endif %}
+
+      <h5 class="mb-3">Submit Deposit Request</h5>
+      <form method="POST" action="{{ url_for('main.deposit') }}">
+        <div class="mb-3">
+          <input type="number" name="amount" step="0.01" class="form-control" placeholder="Amount (USDT)" required>
+        </div>
+        <div class="mb-3">
+          <input type="text" name="tx_hash" class="form-control" placeholder="Transaction Hash (optional)">
+        </div>
+        <button type="submit" class="btn btn-success w-100">Submit Deposit</button>
+      </form>
+
+      <a href="{{ url_for('main.dashboard') }}" class="btn btn-secondary w-100 mt-3">⬅️ Back to Dashboard</a>
+    </div>
+  </div>
+</div>
+
+<script>
+  function copyAddress() {
+    const txt = document.getElementById('walletAddress').innerText.trim();
+    navigator.clipboard.writeText(txt)
+      .then(() => alert('Wallet address copied!'))
+      .catch(() => alert('Copy failed.'));
+  }
+</script>
+{% endblock %}
+
+
+
+
+
+
+

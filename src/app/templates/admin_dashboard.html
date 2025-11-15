@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin Dashboard</title>
+  <style>
+    body { font-family: Arial; margin: 20px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    th, td { padding: 10px; border: 1px solid #ccc; text-align: center; }
+    th { background: #333; color: #fff; }
+    a { text-decoration: none; padding: 4px 8px; border-radius: 4px; }
+    a.approve { background-color: #4CAF50; color: white; }
+    a.reject { background-color: #f44336; color: white; }
+    form { display: inline-block; margin: 0; }
+    input { width: 70px; padding: 3px; }
+    button { padding: 4px 8px; }
+    .flash { padding: 10px; margin-bottom: 15px; border-radius: 5px; }
+    .success { background-color: #d4edda; color: #155724; }
+    .danger { background-color: #f8d7da; color: #721c24; }
+    h3 { margin-top: 40px; }
+  </style>
+</head>
+<body>
+
+  <h2>👑 Admin Dashboard</h2>
+  <p>Welcome, {{ current_user.username }}!</p>
+
+  <!-- Flash Messages -->
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+        <div class="flash {{ category }}">{{ message }}</div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+
+  <!-- ====================== USERS TABLE ====================== -->
+
+  <h3>Users</h3>
+  <table>
+    <tr>
+      <th>ID</th><th>Username</th><th>Email</th><th>Balance</th>
+      <th>Total Deposits</th><th>KYC Status</th><th>Admin?</th><th>Actions</th>
+    </tr>
+
+    {% for user in users %}
+    <tr>
+      <td>{{ user.id }}</td>
+      <td>{{ user.username }}</td>
+      <td>{{ user.email }}</td>
+      <td>{{ "%.2f"|format(user.balance) }}</td>
+      <td>{{ "%.2f"|format(user.total_deposits) }}</td>
+      <td>{{ user.kyc_status }}</td>
+      <td>{{ '✅' if user.is_admin else '❌' }}</td>
+
+      <td>
+        <!-- CREDIT FORM -->
+        <form action="{{ url_for('admin.credit_user', user_id=user.id) }}" method="POST">
+          <input type="number" step="0.01" name="amount" placeholder="Credit">
+          <button type="submit">+</button>
+        </form>
+
+        <!-- DEBIT FORM -->
+        <form action="{{ url_for('admin.debit_user', user_id=user.id) }}" method="POST">
+          <input type="number" step="0.01" name="amount" placeholder="Debit">
+          <button type="submit">-</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </table>
+
+
+
+  <!-- ====================== KYC LOGS ====================== -->
+
+  <h3>KYC Logs</h3>
+  <table>
+    <tr>
+      <th>ID</th><th>User ID</th><th>Full Name</th><th>ID Number</th>
+      <th>Status</th><th>Document</th><th>Actions</th>
+    </tr>
+
+    {% for kyc in kycs %}
+    <tr>
+      <td>{{ kyc.id }}</td>
+      <td>{{ kyc.user_id }}</td>
+      <td>{{ kyc.full_name }}</td>
+      <td>{{ kyc.id_number }}</td>
+      <td>{{ kyc.status }}</td>
+
+      <td>
+        {% if kyc.document_path %}
+          <a href="{{ url_for('static', filename='uploads/' + kyc.document_path.split('/')[-1]) }}" target="_blank">
+            View
+          </a>
+        {% else %}
+          No file
+        {% endif %}
+      </td>
+
+      <td>
+        {% if kyc.status == 'pending' %}
+          <a href="{{ url_for('main.approve_kyc', kyc_id=kyc.id) }}" class="approve">Approve</a>
+          <a href="{{ url_for('main.reject_kyc', kyc_id=kyc.id) }}" class="reject">Reject</a>
+        {% else %}
+          -
+        {% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </table>
+
+
+
+  <!-- ====================== DEPOSITS TABLE ====================== -->
+
+  <h3>Deposits</h3>
+  <table>
+    <tr>
+      <th>ID</th><th>User ID</th><th>Amount (USDT)</th><th>Network</th>
+      <th>TX Hash</th><th>Status</th><th>Timestamp</th><th>Actions</th>
+    </tr>
+
+    {% for dep in deposits %}
+    <tr>
+      <td>{{ dep.id }}</td>
+      <td>{{ dep.user_id }}</td>
+      <td>{{ "%.2f"|format(dep.amount) }}</td>
+      <td>{{ dep.network }}</td>
+      <td>
+        {% if dep.tx_hash %}
+          <small>{{ dep.tx_hash }}</small>
+        {% else %}
+          <i>None</i>
+        {% endif %}
+      </td>
+
+      <td>{{ dep.status }}</td>
+      <td>{{ dep.timestamp.strftime("%Y-%m-%d %H:%M") }}</td>
+
+      <td>
+        {% if dep.status == 'pending' %}
+          <a href="{{ url_for('main.approve_deposit', deposit_id=dep.id) }}" class="approve">Approve</a>
+          <a href="{{ url_for('main.reject_deposit', deposit_id=dep.id) }}" class="reject">Reject</a>
+        {% else %}
+          -
+        {% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </table>
+
+</body>
+</html>
+
+
+

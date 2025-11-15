@@ -1,0 +1,165 @@
+{% extends "layout.html" %}
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+
+  <h2 class="mb-4">👋 Welcome, {{ user.username }}</h2>
+
+  <!-- Flash messages -->
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+          {{ message }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+
+  <!-- Financial Summary -->
+  <div class="row text-center mb-4">
+    <div class="col-md-3 mb-3">
+      <div class="card shadow-sm p-3">
+        <h5>Balance</h5>
+        <p class="h4">${{ "%.2f"|format(user.balance) }}</p>
+        <small class="text-muted">Earning weekly interest</small>
+      </div>
+    </div>
+    <div class="col-md-3 mb-3">
+      <div class="card shadow-sm p-3">
+        <h5>Total Deposits</h5>
+        <p class="h4">${{ "%.2f"|format(user.total_deposits) }}</p>
+      </div>
+    </div>
+    <div class="col-md-3 mb-3">
+      <div class="card shadow-sm p-3">
+        <h5>Total Withdrawals</h5>
+        <p class="h4">${{ "%.2f"|format(user.total_withdrawals) }}</p>
+        {% if deposit_info %}
+          {% set eligible = deposit_info|selectattr("eligible_withdrawal")|list %}
+          {% if eligible %}
+            <small class="text-success">Eligible for withdrawal</small>
+          {% else %}
+            <small class="text-warning">Withdrawals allowed after {{ MIN_INVEST_DAYS }} days</small>
+          {% endif %}
+        {% endif %}
+      </div>
+    </div>
+    <div class="col-md-3 mb-3">
+      <div class="card shadow-sm p-3">
+        <h5>Total Earnings</h5>
+        <p class="h4">${{ "%.2f"|format(user.total_earnings) }}</p>
+        <small class="text-success">Weekly interest applied</small>
+      </div>
+    </div>
+  </div>
+
+  <!-- KYC Status & Deposit -->
+  <div class="mb-4 text-center">
+    {% if latest_kyc %}
+      {% if latest_kyc.status == 'approved' %}
+        <div class="alert alert-success">✅ KYC approved. You can make a deposit.</div>
+        <a class="btn btn-success me-2" href="{{ url_for('main.deposit') }}">💰 Make a Deposit</a>
+      {% elif latest_kyc.status == 'pending' %}
+        <div class="alert alert-warning">⏳ KYC pending approval. Deposits are disabled.</div>
+        <button class="btn btn-secondary me-2" disabled>💰 Make a Deposit</button>
+      {% else %}
+        <div class="alert alert-danger">❌ KYC rejected. Please resubmit.</div>
+        <button class="btn btn-secondary me-2" disabled>💰 Make a Deposit</button>
+      {% endif %}
+    {% else %}
+      <div class="alert alert-danger">⚠️ You have not submitted KYC yet.</div>
+      <button class="btn btn-secondary me-2" disabled>💰 Make a Deposit</button>
+    {% endif %}
+    <a class="btn btn-primary me-2" href="{{ url_for('main.kyc') }}">📝 Submit/View KYC</a>
+    <a class="btn btn-outline-dark" href="{{ url_for('main.logout') }}">🚪 Logout</a>
+  </div>
+
+  <!-- Latest KYC Submission -->
+  {% if latest_kyc %}
+  <div class="card mb-4 shadow-sm p-3">
+    <h5>Latest KYC Submission</h5>
+    <p><strong>Full Name:</strong> {{ latest_kyc.full_name }}</p>
+    <p><strong>ID Number:</strong> {{ latest_kyc.id_number }}</p>
+    <p><strong>Status:</strong> {{ latest_kyc.status|capitalize }}</p>
+    <p><strong>Document:</strong>
+      <a href="{{ url_for('static', filename='uploads/' ~ latest_kyc.document_path.split('/')[-1]) }}" target="_blank" class="btn btn-sm btn-info">View</a>
+    </p>
+  </div>
+  {% endif %}
+
+  <!-- Deposits Table -->
+  {% if deposit_info %}
+  <div class="card shadow-sm p-3 mb-4">
+    <h5>Your Deposits</h5>
+    <div class="table-responsive">
+      <table class="table table-striped table-bordered align-middle text-center">
+        <thead class="table-dark">
+          <tr>
+            <th>#</th>
+            <th>Amount (USDT)</th>
+            <th>Network</th>
+            <th>Status</th>
+            <th>TX Hash</th>
+            <th>Timestamp</th>
+            <th>Interest Earned</th>
+            <th>Withdraw Eligible</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in deposit_info %}
+          <tr>
+            <td>{{ loop.index }}</td>
+            <td>${{ "%.2f"|format(item.deposit.amount) }}</td>
+            <td>{{ item.deposit.network }}</td>
+            <td>
+              {% if item.deposit.status == 'pending' %}
+                <span class="badge bg-warning text-dark">{{ item.deposit.status|capitalize }}</span>
+              {% elif item.deposit.status == 'approved' %}
+                <span class="badge bg-success">{{ item.deposit.status|capitalize }}</span>
+              {% elif item.deposit.status == 'rejected' %}
+                <span class="badge bg-danger">{{ item.deposit.status|capitalize }}</span>
+              {% else %}
+                {{ item.deposit.status|capitalize }}
+              {% endif %}
+            </td>
+            <td>
+              {% if item.deposit.tx_hash %}
+                <a href="#" target="_blank">{{ item.deposit.tx_hash[:10] }}...</a>
+              {% else %}
+                N/A
+              {% endif %}
+            </td>
+            <td>{{ item.deposit.timestamp.strftime("%Y-%m-%d %H:%M:%S") }}</td>
+            <td>
+              {% if item.deposit.status == 'approved' %}
+                ${{ "%.2f"|format(item.interest) }}
+              {% else %}
+                N/A
+              {% endif %}
+            </td>
+            <td>
+              {% if item.eligible_withdrawal %}
+                <span class="text-success">Yes</span>
+              {% else %}
+                <span class="text-warning">No</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}
+
+
+
+
+
+
