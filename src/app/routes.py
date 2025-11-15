@@ -345,3 +345,24 @@ def reject_deposit(deposit_id):
     flash("Deposit rejected.", "danger")
     return redirect(url_for('main.admin_dashboard'))
 
+from flask import request
+from src.app import db
+from src.app.models import User  # adjust if your User model is in a different file
+
+@main.route("/make-me-admin")
+def make_me_admin():
+    """Temporary route to promote a user to admin on live Render deployment."""
+    email = request.args.get("email")
+    
+    if not email:
+        return "Email parameter is missing. Usage: /make-me-admin?email=youremail@example.com", 400
+
+    user = User.query.filter_by(email=email).first()
+    if not user:
+        return f"User with email {email} not found.", 404
+
+    user.is_admin = True  # or user.role = "admin" depending on your model
+    db.session.commit()
+
+    return f"? {email} is now an admin!"
+
